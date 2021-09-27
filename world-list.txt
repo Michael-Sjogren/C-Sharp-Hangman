@@ -1,0 +1,2 @@
+person,jobb,spel,grafik,text,orm,ko,cyckelpump,bössa,paraply,citron,päron,apelsin,tacos,pizza,läsk,studier,jul,ekvation,
+namn,rep,godis,chips,bil,spårvagn,sjukhus
