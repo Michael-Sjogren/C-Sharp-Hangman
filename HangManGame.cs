@@ -1,111 +1,221 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text;
 
 namespace C_Sharp_Hangman
 {
     public class HangManGame
     {
+        ConsoleColor infoColor = ConsoleColor.DarkYellow;
+        ConsoleColor errorColor = ConsoleColor.DarkRed;
+        ConsoleColor winColor = ConsoleColor.DarkGreen;
+        ConsoleColor loseColor = ConsoleColor.Red;
+        private String[] words = new String[]{"person","jobb","spel","grafik","text","orm","cyckelpump","bössa","paraply","citron","päron","apelsin","tacos","pizza","läsk","studier","jul","ekvation",
+"namn","rep","godis","chips","bil","spårvagn","sjukhus","kossa"};
+        private string secretWord;
         private const int MaxGuesses = 10;
-        private string word = "kossa";
+        private int guessCount = 0;
+        private bool isGuessCorrect = false;
+        private bool lostGame = false;
+        private HashSet<char> guessedLetters;
+        private char[] correctLetters;
+        private StringBuilder builder;
+
         public bool IsRunning { get; private set; }
+
+        public HangManGame()
+        {
+            builder = new StringBuilder();
+            guessedLetters = new HashSet<char>();
+        }
+
+        public void Reset()
+        {
+            var rng = new Random();
+            guessedLetters.Clear();
+            builder.Clear();
+            secretWord = words[rng.Next(0, words.Length - 1)];
+            correctLetters = secretWord.ToCharArray();
+            lostGame = false;
+            isGuessCorrect = false;
+            guessCount = 0;
+        }
         public void Run()
         {
             IsRunning = true;
             while (IsRunning)
             {
-                if(MakeGuess())
+                // choose if you want to keep playing or not
+                Console.WriteLine("Welcome to the Hangman game... without the hangman ;).");
+                Console.ForegroundColor = infoColor;
+                Console.WriteLine("Enter 'play' to play the game or 'quit' to quit.");
+                Console.ResetColor();
+                var input = GetUserInput();
+                Console.Clear();
+                if (input == "play")
                 {
-                    Console.WriteLine("You guessed right!");
+
+                    MakeGuesses();
+                    // win
+                    if (isGuessCorrect && !lostGame)
+                    {
+                        Console.ForegroundColor = winColor;
+                        Console.WriteLine($"You Win! You guessed correctly! The secret word was {secretWord}.");
+                    }
+                    // lose
+                    else
+                    {
+                        Console.ForegroundColor = loseColor;
+                        Console.WriteLine($"Your guess is wrong. You lost.");
+                    }
+                    Console.ResetColor();
+                    Console.WriteLine("Press any key to continue.");
+                    Console.ReadKey();
+                    Console.Clear();
                 }
-                else
+                else if (input == "quit")
                 {
-                    Console.WriteLine("You lost!");
+                    Console.Write("Game quit. Thank you for playing!");
+                    Quit();
                 }
             }
         }
-
-        private void PrintGuessedLetters(Dictionary<String , bool> guessedLetters)
+        private void PrintGuessesLeft()
         {
+            Console.WriteLine();
+            Console.WriteLine($"{MaxGuesses - guessCount} guesses left.");
+        }
 
-            foreach(var letter in word)
+        private void PrintIncorrectGuessedLetters()
+        {
+            if (builder.Length > 0)
             {
-                var l = letter.ToString();
-                if(guessedLetters[l])
-                {
-                    Console.Write($"{l}   ");
-                }
-                else
-                {
-                    Console.Write("_   ");
-                }
+                Console.WriteLine("List of incorrect letter guesses:");
+                Console.ForegroundColor = loseColor;
+                Console.WriteLine(builder);
+                Console.ResetColor();
+            }
+        }
+
+        private void PrintRevealedLettersAndDashes()
+        {
+            foreach (char letter in correctLetters)
+            {
+                bool hasSeenLetter = guessedLetters.Contains(letter) || isGuessCorrect;
+                Console.Write(hasSeenLetter ? $"{letter}   " : "_   ");
             }
             Console.WriteLine();
         }
-        private bool MakeGuess()
+
+        private void MakeGuesses()
         {
-            int guessCount = 1;
-            var won = false;
-            var guessedLetters = new Dictionary<String , bool >();
-            var guessedWords = new HashSet<String>();
-            // fill the dictonary with the correct letters the application chooses
-            foreach(var letter in word)
-            {
-                var l = letter.ToString();
-                guessedLetters[l] = false;
-                
-            }
+            Reset();
 
-            while(guessCount <= MaxGuesses && !won)
+            while (!lostGame && !isGuessCorrect)
             {
-
+                lostGame = guessCount > MaxGuesses;
+                Console.Clear();
+                PrintTutorial();
+                PrintIncorrectGuessedLetters();
+                PrintGuessesLeft();
+                PrintRevealedLettersAndDashes();
                 String guess = GetGuessFromUser();
-                // exact correct word guess
-                if (guess.Equals(word))
-                {
-                    won = true;
-                }
-                else if(!guess.Equals(word) && guess.Length > 1)
-                {
-
-                }
                 
-                // single letter guesses
-                if(guess.Length == 1)
+                bool isSingleLetterGuess = guess.Length == 1;
+                bool isWordGuess = guess.Length == secretWord.Length;
+                bool isEmpty = guess.Length == 0;
+
+                if (IsNotUserInputValid(isSingleLetterGuess , isWordGuess , isEmpty))
                 {
-                    if(guessedLetters.ContainsKey(guess))
+                    continue;
+                }
+
+                var stringComparer = StringComparison.OrdinalIgnoreCase;
+                // exact correct word guess
+                if (guess.Equals(secretWord, stringComparer))
+                {
+                    isGuessCorrect = true;
+                }
+                else if (!guess.Equals(secretWord, stringComparer) && isWordGuess)
+                {
+                    guessCount++;
+                }
+                // single letter guesses
+                else if (isSingleLetterGuess)
+                {
+                    char letterGuess = guess[0];
+                    bool alreadyGuessed = guessedLetters.Contains(letterGuess);
+                    bool isLetterCorrect = correctLetters.Any(e => e == letterGuess);
+                    if (isLetterCorrect && !alreadyGuessed)
                     {
-                        var alreadyGuessed = guessedLetters[guess];
-                        if (!alreadyGuessed)
-                        {
-                            guessedLetters[guess] = true;
-                        }
+
+                        guessedLetters.Add(letterGuess);
+                        guessCount++;
                     }
-                    else
+                    else if (!alreadyGuessed && !isLetterCorrect)
                     {
+                        builder.Append(letterGuess + ", ");
+                        guessedLetters.Add(letterGuess);
                         guessCount++;
                     }
                 }
-
-                if(guessedLetters.Values.All( value => value == true))
+                // if guessed letters cotains all correct letters
+                if (correctLetters.All(e => guessedLetters.Contains(e)))
                 {
-                    won = true;
+                    isGuessCorrect = true;
                 }
-                PrintGuessedLetters(guessedLetters);
             }
-            return won;
         }
 
+        /** Returns true if the guess is invalid and prints the error. **/
+        private bool IsNotUserInputValid(bool isSingleLetter , bool isWordGuess , bool isEmpty)
+        {
+            var incorrectWord = !isSingleLetter && !isWordGuess;
+            if (isEmpty)
+            {
+                PrintError("No guess was inputted.");
+            }
+            else if(incorrectWord)
+            {
+                PrintError("Incorrect guess. The guessed word should have the same length as the secret word.");
+            }
+            return incorrectWord || isEmpty;
+        }
+        private void PrintError(String message)
+        {
+            Console.ForegroundColor = errorColor;
+            Console.Write("Error: ");
+            Console.ResetColor();
+            Console.Write(message);
+            Console.WriteLine();
+            Console.WriteLine("Press any key to continue.");
+            Console.ReadKey();
+        }
+
+        private void PrintTutorial()
+        {
+            Console.WriteLine("Guess the secret word!");
+            Console.ForegroundColor = infoColor;
+            Console.WriteLine("Enter a single letter to guess. Or a whole word.\nAll secret words are in Swedish.\nGuessed words must have the same length as secret word to be a valid guess.");
+            Console.WriteLine($"Word length is {secretWord.Length}.");
+            Console.ResetColor();
+        }
+
+        private String GetUserInput()
+        {
+            return Console.ReadLine().Trim().ToLower();
+        }
         private String GetGuessFromUser()
         {
-            Console.Write("Enter your guess: ");
-            var guess = Console.ReadLine().Trim().ToLower();
+            Console.Write("Your guess: ");
+            var guess = GetUserInput();
             return guess;
         }
-        public void Stop()
+        public void Quit()
         {
             IsRunning = false;
         }
-        
+
     }
 }
