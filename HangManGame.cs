@@ -118,7 +118,11 @@ namespace C_Sharp_Hangman
 
             while (!lostGame && !isGuessCorrect)
             {
-                lostGame = guessCount > MaxGuesses;
+                lostGame = guessCount >= MaxGuesses;
+                if (lostGame)
+                {
+                    break;
+                }
                 Console.Clear();
                 PrintTutorial();
                 PrintIncorrectGuessedLetters();
@@ -154,11 +158,10 @@ namespace C_Sharp_Hangman
                     bool isLetterCorrect = secretWordLetters.Any(e => e == letterGuess);
                     if (isLetterCorrect && !alreadyGuessed)
                     {
-
                         guessedLetters.Add(letterGuess);
                         guessCount++;
                     }
-                    else if (!alreadyGuessed && !isLetterCorrect)
+                    else if(!alreadyGuessed)
                     {
                         builder.Append(letterGuess + ", ");
                         guessedLetters.Add(letterGuess);
