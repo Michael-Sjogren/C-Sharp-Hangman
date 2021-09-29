@@ -63,7 +63,7 @@ namespace C_Sharp_Hangman
                     if (isGuessCorrect && !lostGame)
                     {
                         Console.ForegroundColor = winColor;
-                        Console.WriteLine($"You Win! You guessed correctly! The secret word was {secretWordLetters.ToString()}.");
+                        Console.WriteLine($"You Win! You guessed correctly! The secret word was { new String(secretWordLetters) }.");
                     }
                     // lose
                     else
@@ -137,7 +137,7 @@ namespace C_Sharp_Hangman
 
                 var stringComparer = StringComparison.OrdinalIgnoreCase;
                 // exact correct word guess
-                var secretWord = secretWordLetters.ToString();
+                var secretWord = new String(secretWordLetters);
                 if (guess.Equals(secretWord, stringComparer))
                 {
                     isGuessCorrect = true;
