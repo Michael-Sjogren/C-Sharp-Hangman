@@ -13,15 +13,17 @@ namespace C_Sharp_Hangman
         ConsoleColor loseColor = ConsoleColor.Red;
         private String[] words = new String[]{"person","jobb","spel","grafik","text","orm","cyckelpump","bössa","paraply","citron","päron","apelsin","tacos","pizza","läsk","studier","jul","ekvation",
 "namn","rep","godis","chips","bil","spårvagn","sjukhus","kossa"};
-        private string secretWord;
-        private const int MaxGuesses = 10;
         private int guessCount = 0;
         private bool isGuessCorrect = false;
         private bool lostGame = false;
         private HashSet<char> guessedLetters;
-        private char[] correctLetters;
+        private char[] secretWordLetters;
+
         private StringBuilder builder;
 
+        public const int MaxGuesses = 10;
+        // letters to write out in the console either a letter or underscore '_'
+        public char[] CorrectlyGuessedLetters {get; private set;}
         public bool IsRunning { get; private set; }
 
         public HangManGame()
@@ -35,8 +37,7 @@ namespace C_Sharp_Hangman
             var rng = new Random();
             guessedLetters.Clear();
             builder.Clear();
-            secretWord = words[rng.Next(0, words.Length - 1)];
-            correctLetters = secretWord.ToCharArray();
+            secretWordLetters = words[rng.Next(0, words.Length)].ToCharArray();
             lostGame = false;
             isGuessCorrect = false;
             guessCount = 0;
@@ -61,7 +62,7 @@ namespace C_Sharp_Hangman
                     if (isGuessCorrect && !lostGame)
                     {
                         Console.ForegroundColor = winColor;
-                        Console.WriteLine($"You Win! You guessed correctly! The secret word was {secretWord}.");
+                        Console.WriteLine($"You Win! You guessed correctly! The secret word was {secretWordLetters.ToString()}.");
                     }
                     // lose
                     else
@@ -100,10 +101,12 @@ namespace C_Sharp_Hangman
 
         private void PrintRevealedLettersAndDashes()
         {
-            foreach (char letter in correctLetters)
+            for (int i = 0; i < secretWordLetters.Length; i++)
             {
+                char letter = secretWordLetters[i];
                 bool hasSeenLetter = guessedLetters.Contains(letter) || isGuessCorrect;
-                Console.Write(hasSeenLetter ? $"{letter}   " : "_   ");
+                CorrectlyGuessedLetters[i] = hasSeenLetter ? letter : '_';
+                Console.Write($"{CorrectlyGuessedLetters[i]}   ");
             }
             Console.WriteLine();
         }
@@ -123,7 +126,7 @@ namespace C_Sharp_Hangman
                 String guess = GetGuessFromUser();
                 
                 bool isSingleLetterGuess = guess.Length == 1;
-                bool isWordGuess = guess.Length == secretWord.Length;
+                bool isWordGuess = guess.Length == secretWordLetters.Length;
                 bool isEmpty = guess.Length == 0;
 
                 if (IsNotUserInputValid(isSingleLetterGuess , isWordGuess , isEmpty))
@@ -133,6 +136,7 @@ namespace C_Sharp_Hangman
 
                 var stringComparer = StringComparison.OrdinalIgnoreCase;
                 // exact correct word guess
+                var secretWord = secretWordLetters.ToString();
                 if (guess.Equals(secretWord, stringComparer))
                 {
                     isGuessCorrect = true;
@@ -146,7 +150,7 @@ namespace C_Sharp_Hangman
                 {
                     char letterGuess = guess[0];
                     bool alreadyGuessed = guessedLetters.Contains(letterGuess);
-                    bool isLetterCorrect = correctLetters.Any(e => e == letterGuess);
+                    bool isLetterCorrect = secretWordLetters.Any(e => e == letterGuess);
                     if (isLetterCorrect && !alreadyGuessed)
                     {
 
@@ -161,7 +165,7 @@ namespace C_Sharp_Hangman
                     }
                 }
                 // if guessed letters cotains all correct letters
-                if (correctLetters.All(e => guessedLetters.Contains(e)))
+                if (secretWordLetters.All(e => guessedLetters.Contains(e)))
                 {
                     isGuessCorrect = true;
                 }
@@ -198,7 +202,7 @@ namespace C_Sharp_Hangman
             Console.WriteLine("Guess the secret word!");
             Console.ForegroundColor = infoColor;
             Console.WriteLine("Enter a single letter to guess. Or a whole word.\nAll secret words are in Swedish.\nGuessed words must have the same length as secret word to be a valid guess.");
-            Console.WriteLine($"Word length is {secretWord.Length}.");
+            Console.WriteLine($"Word length is {secretWordLetters.Length}.");
             Console.ResetColor();
         }
 
