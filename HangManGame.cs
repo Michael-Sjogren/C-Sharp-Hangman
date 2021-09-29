@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace C_Sharp_Hangman
@@ -212,7 +213,28 @@ namespace C_Sharp_Hangman
 
         private String GetUserInput()
         {
-            return Console.ReadLine().Trim().ToLower();
+            try
+            {
+                var input = Console.ReadLine();
+                if (input != null)
+                {
+                    return  input.Trim().ToLower();
+                }
+            }
+            catch (IOException e)
+            {
+                Console.WriteLine(e);
+            }
+            catch (OutOfMemoryException e)
+            {
+                Console.WriteLine(e);
+            }
+            catch (ArgumentOutOfRangeException e)
+            {
+                Console.WriteLine(e);
+            }
+
+            return "";
         }
         private String GetGuessFromUser()
         {
