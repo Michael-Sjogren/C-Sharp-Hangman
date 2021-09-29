@@ -38,6 +38,7 @@ namespace C_Sharp_Hangman
             guessedLetters.Clear();
             builder.Clear();
             secretWordLetters = words[rng.Next(0, words.Length)].ToCharArray();
+            CorrectlyGuessedLetters = new char[secretWordLetters.Length];
             lostGame = false;
             isGuessCorrect = false;
             guessCount = 0;
