@@ -12,41 +12,12 @@ namespace HangmanGame
         ConsoleColor errorColor = ConsoleColor.DarkRed;
         ConsoleColor winColor = ConsoleColor.DarkGreen;
         ConsoleColor loseColor = ConsoleColor.Red;
-        private String[] words = new String[]{"person","jobb","spel","grafik","text","orm","cyckelpump","bössa","paraply","citron","päron","apelsin","tacos","pizza","läsk","studier","jul","ekvation",
-"namn","rep","godis","chips","bil","spårvagn","sjukhus","kossa"};
-        private int guessCount = 0;
-        private bool isGuessCorrect = false;
-        private bool lostGame = false;
-        private HashSet<char> guessedLetters;
-        private char[] secretWordLetters;
-
-        private StringBuilder builder;
-
-        public const int MaxGuesses = 10;
-        // letters to write out in the console either a letter or underscore '_'
-        public char[] CorrectlyGuessedLetters {get; private set;}
         public bool IsRunning { get; private set; }
-
-        public HangManGame()
-        {
-            builder = new StringBuilder();
-            guessedLetters = new HashSet<char>();
-        }
-
-        public void Reset()
-        {
-            var rng = new Random();
-            guessedLetters.Clear();
-            builder.Clear();
-            secretWordLetters = words[rng.Next(0, words.Length)].ToCharArray();
-            CorrectlyGuessedLetters = new char[secretWordLetters.Length];
-            lostGame = false;
-            isGuessCorrect = false;
-            guessCount = 0;
-        }
+        private HangmanGameLogic game;
         public void Run()
         {
             IsRunning = true;
+            
             while (IsRunning)
             {
                 // choose if you want to keep playing or not
@@ -58,13 +29,28 @@ namespace HangmanGame
                 Console.Clear();
                 if (input == "play")
                 {
-
-                    MakeGuesses();
+                    game = new HangmanGameLogic();
+                    game.InitializeGame();
                     // win
-                    if (isGuessCorrect && !lostGame)
+                    var isGuessCorrect = false;
+                    while (!game.IsGameOver && !isGuessCorrect)
+                    {
+                        PrintTutorial();
+                        PrintGuessesLeft();
+                        PrintIncorrectLetters();
+                        PrintRevealedLetters();
+                        var guess = GetGuessFromUser();
+                        if (!IsUserInputValid(guess))
+                        {
+                            continue;
+                        }
+                        isGuessCorrect = game.MakeGuess(guess);
+                    }
+                    if (!game.IsGameOver && isGuessCorrect)
                     {
                         Console.ForegroundColor = winColor;
-                        Console.WriteLine($"You Win! You guessed correctly! The secret word was { new String(secretWordLetters) }.");
+                        PrintRevealedLetters();
+                        Console.WriteLine($"You Win! You guessed correctly! The secret word was { game.SecretWord }.");
                     }
                     // lose
                     else
@@ -84,113 +70,51 @@ namespace HangmanGame
                 }
             }
         }
+        public void PrintIncorrectLetters()
+        {
+            Console.WriteLine("List of all incorrect guessed letters:");
+            Console.ForegroundColor = loseColor;
+            Console.WriteLine(game.IncorrectLetterGuesses);
+            Console.ResetColor();
+        }
+        private void PrintRevealedLetters()
+        {
+            foreach (var letter in game.RevealedLetters)
+            {
+                Console.Write($"{letter}   ");
+            }
+            Console.WriteLine("\n");
+        }
+
         private void PrintGuessesLeft()
         {
             Console.WriteLine();
-            Console.WriteLine($"{MaxGuesses - guessCount} guesses left.");
+            Console.WriteLine($"{HangmanGameLogic.MaxGuesses - game.GuessCount} guesses left.");
         }
-
-        private void PrintIncorrectGuessedLetters()
-        {
-            if (builder.Length > 0)
-            {
-                Console.WriteLine("List of incorrect letter guesses:");
-                Console.ForegroundColor = loseColor;
-                Console.WriteLine(builder);
-                Console.ResetColor();
-            }
-        }
-
-        private void PrintRevealedLettersAndDashes()
-        {
-            for (int i = 0; i < secretWordLetters.Length; i++)
-            {
-                char letter = secretWordLetters[i];
-                bool hasSeenLetter = guessedLetters.Contains(letter) || isGuessCorrect;
-                CorrectlyGuessedLetters[i] = hasSeenLetter ? letter : '_';
-                Console.Write($"{CorrectlyGuessedLetters[i]}   ");
-            }
-            Console.WriteLine();
-        }
-
-        private void MakeGuesses()
-        {
-            Reset();
-
-            while (!lostGame && !isGuessCorrect)
-            {
-                lostGame = guessCount >= MaxGuesses;
-                if (lostGame)
-                {
-                    break;
-                }
-                Console.Clear();
-                PrintTutorial();
-                PrintIncorrectGuessedLetters();
-                PrintGuessesLeft();
-                PrintRevealedLettersAndDashes();
-                String guess = GetGuessFromUser();
-                
-                bool isSingleLetterGuess = guess.Length == 1;
-                bool isWordGuess = guess.Length == secretWordLetters.Length;
-                bool isEmpty = guess.Length == 0;
-
-                if (IsNotUserInputValid(isSingleLetterGuess , isWordGuess , isEmpty))
-                {
-                    continue;
-                }
-
-                var stringComparer = StringComparison.OrdinalIgnoreCase;
-                // exact correct word guess
-                var secretWord = new String(secretWordLetters);
-                if (guess.Equals(secretWord, stringComparer))
-                {
-                    isGuessCorrect = true;
-                }
-                else if (!guess.Equals(secretWord, stringComparer) && isWordGuess)
-                {
-                    guessCount++;
-                }
-                // single letter guesses
-                else if (isSingleLetterGuess)
-                {
-                    char letterGuess = guess[0];
-                    bool alreadyGuessed = guessedLetters.Contains(letterGuess);
-                    bool isLetterCorrect = secretWordLetters.Any(e => e == letterGuess);
-                    if (isLetterCorrect && !alreadyGuessed)
-                    {
-                        guessedLetters.Add(letterGuess);
-                        guessCount++;
-                    }
-                    else if(!alreadyGuessed)
-                    {
-                        builder.Append(letterGuess + ", ");
-                        guessedLetters.Add(letterGuess);
-                        guessCount++;
-                    }
-                }
-                // if guessed letters cotains all correct letters
-                if (secretWordLetters.All(e => guessedLetters.Contains(e)))
-                {
-                    isGuessCorrect = true;
-                }
-            }
-        }
-
+        
+        
         /** Returns true if the guess is invalid and prints the error. **/
-        private bool IsNotUserInputValid(bool isSingleLetter , bool isWordGuess , bool isEmpty)
+        private bool IsUserInputValid(String guess)
         {
-            var incorrectWord = !isSingleLetter && !isWordGuess;
-            if (isEmpty)
+            if (guess.Equals(""))
             {
                 PrintError("No guess was inputted.");
+                return false;
             }
-            else if(incorrectWord)
+            if (!game.IsAWord(guess))
+            {
+                PrintError("Incorrect guess. Not a word.");
+                return false;
+            }
+            
+            if (guess.Length != 1 && guess.Length != game.SecretWord.Length)
             {
                 PrintError("Incorrect guess. The guessed word should have the same length as the secret word.");
+                return false;
             }
-            return incorrectWord || isEmpty;
+            return true;
         }
+        
         private void PrintError(String message)
         {
             Console.ForegroundColor = errorColor;
@@ -207,7 +131,7 @@ namespace HangmanGame
             Console.WriteLine("Guess the secret word!");
             Console.ForegroundColor = infoColor;
             Console.WriteLine("Enter a single letter to guess. Or a whole word.\nAll secret words are in Swedish.\nGuessed words must have the same length as secret word to be a valid guess.");
-            Console.WriteLine($"Word length is {secretWordLetters.Length}.");
+            Console.WriteLine($"Word length is {game.SecretWord.Length}.");
             Console.ResetColor();
         }
 
@@ -218,8 +142,9 @@ namespace HangmanGame
                 var input = Console.ReadLine();
                 if (input != null)
                 {
-                    return  input.Trim().ToLower();
+                    return input.Trim().ToLower();
                 }
+                
             }
             catch (IOException e)
             {

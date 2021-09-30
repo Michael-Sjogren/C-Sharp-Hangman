@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
@@ -9,38 +10,56 @@ namespace HangmanGame
     public class HangmanGameLogic
     {
         private HashSet<char> allGuessedLetters;
-        private StringBuilder incorrectLetterGuesses; 
         public const int MaxGuesses = 10;
-        private char[] correctlyGuessedLetters;
+        private String currentGuess;
         private String[] words = new String[]{"person","jobb","spel","grafik","text","orm","cyckelpump","bössa","paraply","citron","päron","apelsin","tacos","pizza","läsk","studier","jul","ekvation",
 "namn","rep","godis","chips","bil","spårvagn","sjukhus","kossa"};
+        public StringBuilder IncorrectLetterGuesses {get; private set;} 
         public String SecretWord {get; set;}
         public int GuessCount {get; private set;}
-        public String CurrentGuess {get;set;}
         public bool IsGameOver => GuessCount >= MaxGuesses;
+        public Char[] RevealedLetters { get; set; }
+
         public HangmanGameLogic()
         {
-            incorrectLetterGuesses = new StringBuilder();
+            IncorrectLetterGuesses = new StringBuilder();
             allGuessedLetters = new HashSet<char>(29);
         }
 
-        private void DetermineAndSetCorrectlyGuessedLetters()
+        public void InitializeGame()
         {
-            bool isWordGuessCorrect = IsWordGuessCorrect(CurrentGuess);
+            var rng = new Random();
+            SecretWord = words[rng.Next(0 , words.Length)];
+            RevealedLetters = new char[SecretWord.Length];
+            for(int i = 0; i < RevealedLetters.Length; i++)
+            {
+                RevealedLetters[i] = '_';
+              
+            }
+            IncorrectLetterGuesses.Clear();
+            allGuessedLetters.Clear();
+            GuessCount = 0;
+            currentGuess = "";
+        }
+
+        private void UpdateRevealedLetters()
+        {
+            bool isWordGuessCorrect = IsWordGuessCorrect(currentGuess);
             for (int i = 0; i < SecretWord.Length; i++)
             {
                 char letter = SecretWord[i];
                 bool hasSeenLetter = allGuessedLetters.Contains(letter) || isWordGuessCorrect;
-                correctlyGuessedLetters[i] = hasSeenLetter ? letter : '_';
+                RevealedLetters[i] = hasSeenLetter ? letter : '_';
             }
         }
-
+        
         public bool IsAWord(string text)
         {
             var regex = new Regex(@"^[A-Öa-ö]+$");
             var match = regex.Match(text);
             return match.Value.Equals(text);
         }
+        
         // if the player has not guessed correctly this will return false and adds letters
         public bool MakeGuess(String guess)
         {
@@ -48,6 +67,8 @@ namespace HangmanGame
             {
                 return false;
             }
+
+            currentGuess = guess;
             bool isGuessCorrect = false;
             // 1. test if letter is in the allGuessedLetters map first
             // 2. test if correct word contains the letter
@@ -58,14 +79,14 @@ namespace HangmanGame
                 if (!allGuessedLetters.Contains(guessedLetter))
                 {
                     allGuessedLetters.Add(guessedLetter);
-                    GuessCount++;
-                    if (SecretWord.Contains(guessedLetter))
+                    if (IsAllLettersGuessedCorrect())
                     {
-                        isGuessCorrect = true;
+                        return true;
                     }
-                    else
+                    GuessCount++;
+                    if (!SecretWord.Contains(guessedLetter))
                     {
-                        incorrectLetterGuesses.Append(','+guessedLetter);
+                        IncorrectLetterGuesses.Append(','+guessedLetter.ToString());
                     }
                 }   
             }
@@ -78,6 +99,8 @@ namespace HangmanGame
             {
                 GuessCount++;
             }
+
+            UpdateRevealedLetters();
             return isGuessCorrect;
         }
 
@@ -91,16 +114,7 @@ namespace HangmanGame
             return SecretWord.Equals(guess, StringComparison.CurrentCultureIgnoreCase);
         }
 
-        public void InitializeGame()
-        {
-            var rng = new Random();
-            SecretWord = words[rng.Next(0 , words.Length)];
-            correctlyGuessedLetters = new char[SecretWord.Length];
-            incorrectLetterGuesses.Clear();
-            allGuessedLetters.Clear();
-            GuessCount = 0;
-            CurrentGuess = "";
-        }
+
         public List<char> GetAllGuessedLetters()
         {
             return allGuessedLetters.ToList();
