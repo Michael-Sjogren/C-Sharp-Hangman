@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace C_Sharp_Hangman
+namespace HangmanGame
 {
     public class HangManGame
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace C_Sharp_Hangman
+namespace HangmanGame
 {
     class Program
     {
