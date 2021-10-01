@@ -37,25 +37,22 @@ namespace UnitTests
         }
         
         [Theory]
-        [InlineData("L")]
-        [InlineData("f")]
-        [InlineData("b")]
-        [InlineData("d")]
-        [InlineData("å")]
-        [InlineData("ä")]
-        [InlineData("ö")]
-        [InlineData("!")]
-        [InlineData("^")]
-        [InlineData("@")]
-        public void GuessCountIncrementsOnWrongLetterGuess(string letterGuess)
+        [InlineData("kossa","b",1)]
+        [InlineData("kossa","Ö",1)]
+        [InlineData("kossa","Å",1)]
+        [InlineData("kossa","@",0)]
+        [InlineData("kossa","1",0)]
+        [InlineData("kossa","132",0)]
+        [InlineData("kossa","nos",0)]
+        public void GuessCountIncrementsOnWrongLetterGuess(string secretWord , string guess , int expected)
         {
             testSubject.InitializeGame();
-            testSubject.SecretWord = "kossa";
+            testSubject.SecretWord = secretWord;
+            testSubject.UpdateRevealedLetters();
             
-            var isGuessCorrect = testSubject.MakeGuess(letterGuess);
-
-            Assert.False(isGuessCorrect);
-            Assert.Equal(1, testSubject.GuessCount);
+            testSubject.MakeGuess(guess);
+            
+            Assert.Equal(expected, testSubject.GuessCount);
         }
 
 
