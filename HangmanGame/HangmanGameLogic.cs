@@ -30,12 +30,7 @@ namespace HangmanGame
         {
             var rng = new Random();
             SecretWord = words[rng.Next(0 , words.Length)];
-            RevealedLetters = new char[SecretWord.Length];
-            for(int i = 0; i < RevealedLetters.Length; i++)
-            {
-                RevealedLetters[i] = '_';
-              
-            }
+            UpdateRevealedLetters();
             IncorrectLetterGuesses.Clear();
             allGuessedLetters.Clear();
             GuessCount = 0;
@@ -45,6 +40,7 @@ namespace HangmanGame
         private void UpdateRevealedLetters()
         {
             bool isWordGuessCorrect = IsWordGuessCorrect(currentGuess);
+            RevealedLetters = new char[SecretWord.Length];
             for (int i = 0; i < SecretWord.Length; i++)
             {
                 char letter = SecretWord[i];
