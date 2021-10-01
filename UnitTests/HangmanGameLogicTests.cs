@@ -41,6 +41,12 @@ namespace UnitTests
         [InlineData("f")]
         [InlineData("b")]
         [InlineData("d")]
+        [InlineData("å")]
+        [InlineData("ä")]
+        [InlineData("ö")]
+        [InlineData("!")]
+        [InlineData("^")]
+        [InlineData("@")]
         public void GuessCountIncrementsOnWrongLetterGuess(string letterGuess)
         {
             testSubject.InitializeGame();
