@@ -37,7 +37,7 @@ namespace HangmanGame
             currentGuess = "";
         }
 
-        private void UpdateRevealedLetters()
+        public void UpdateRevealedLetters()
         {
             bool isWordGuessCorrect = IsWordGuessCorrect(currentGuess);
             RevealedLetters = new char[SecretWord.Length];
@@ -87,11 +87,11 @@ namespace HangmanGame
                 }   
             }
             // test for word guess
-            else if(IsWordGuessCorrect(guess))
+            if( guess.Length == SecretWord.Length && IsWordGuessCorrect(guess))
             {
                 isGuessCorrect = IsWordGuessCorrect(guess);
             }
-            else
+            else if(guess.Length == SecretWord.Length)
             {
                 GuessCount++;
             }
